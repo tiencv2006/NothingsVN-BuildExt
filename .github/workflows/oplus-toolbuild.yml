@@ -142,3 +142,8 @@ jobs:
           NOTIFY_ERROR_REASON: Workflow run was cancelled before completion.
         run: |
           python notify.py cancelled "${{ github.repository }}" "${{ inputs.input_url }}" "oplus" "${{ inputs.builder_name }}" "${{ inputs.builder_id }}"
+      - name: Save ROM to GitHub Artifacts
+     uses: actions/upload-artifact@v4
+     with:
+       name: RealmeUI-ROM-Fixed
+       path: out/*.zip
