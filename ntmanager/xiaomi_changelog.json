@@ -3,4 +3,7 @@
         "version": "v1.3RC",
         "changelog": "Phiên bản này được tạo ra với mục đích thử nghiệm toolbox nên sẽ không có update gì thêm ở đây!"
     }
+    "11/9/2026": {
+        "version": "v1.31",
+        "changelog": "Phiên bản này ưu tiên các update Toolbox và Fix SourceBuild cơ bản,Cải thiện lại hiệu năng trên 1 số máy.Hỗ trợ cho K100 Series và K90 Ultra và 1 số thiết bị khác,Giới thiệu InstallerX thay thế cho Kashi Installer."
 }
