@@ -1,7 +1,9 @@
 {
     "toolbox_info": {
-        "version": "V1.0",
-        "updated_date": "2026/08/31"
+        "version": "V1.1",
+        "updated_date": "2026/08/31",
+        "can_be_updated_without_updaterom": "true",
+        "download_link": "none"
     },
     "toolbox_data": {
         "devices_profile": "https://raw.githubusercontent.com/tiencv2006/NothingsVN-BuildExt/refs/heads/main/device.json",
