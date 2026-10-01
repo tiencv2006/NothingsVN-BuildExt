@@ -25,16 +25,27 @@ on:
         required: false
         type: boolean
         default: true
+      build_mode:
+        description: 'What to deliver: flash package, OTA package for NT Manager, or both'
+        required: false
+        type: choice
+        options:
+          - both
+          - fastboot
+          - ota
+        default: both
 
 jobs:
   Build:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    # An OTA package adds one to two hours of payload compression on top of the port itself.
+    timeout-minutes: 330
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
       INSTALL_MODS: ${{ inputs.install_mods }}
       INSTALL_TOOLBOX: ${{ inputs.install_toolbox }}
+      BUILD_MODE: ${{ inputs.build_mode }}
     steps:
       - name: Clean unused files and applications
         run: |
@@ -107,6 +118,8 @@ jobs:
         working-directory: toolbuild
         env:
           INPUT_URL: ${{ inputs.input_url }}
+          # Optional: OTA signing identity from secrets instead of bin/ota/keys
+          OTA_CERTIFICATE: ${{ secrets.OTA_CERTIFICATE }}
           PORTROM_URL: ${{ inputs.portrom_url }}
         run: |
           set -e
@@ -116,12 +129,15 @@ jobs:
 
       - name: Pack ROM
         working-directory: toolbuild
+        env:
+          OTA_PRIVATE_KEY: ${{ secrets.OTA_PRIVATE_KEY }}
+          OTA_CERTIFICATE: ${{ secrets.OTA_CERTIFICATE }}
         run: |
           set -e
           set -o pipefail
           python notify.py pack "${{ github.repository }}" "${{ inputs.input_url }}" "oplus" "${{ inputs.builder_name }}" "${{ inputs.builder_id }}"
           echo "[STEP] Pack ROM" | tee -a build_action.log
-          sudo bash packROM.sh n 2>&1 | tee -a build_action.log
+          sudo -E bash packROM.sh n 2>&1 | tee -a build_action.log
 
       - name: Set up Rclone
         working-directory: toolbuild
@@ -133,6 +149,9 @@ jobs:
 
       - name: Upload ROM to cloud
         working-directory: toolbuild
+        env:
+          NTAPI_URL: ${{ secrets.NTAPI_URL }}
+          OTA_BUILD_SECRET: ${{ secrets.OTA_BUILD_SECRET }}
         run: |
           set -e
           set -o pipefail
