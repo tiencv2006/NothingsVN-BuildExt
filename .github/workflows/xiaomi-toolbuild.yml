@@ -128,6 +128,46 @@ jobs:
           echo "[STEP] Pack ROM" | tee -a build_action.log
           sudo -E bash packROM.sh 2>&1 | tee -a build_action.log
 
+      - name: Prepare ROM upload packages
+        id: prepare_packages
+        working-directory: toolbuild
+        run: |
+          set -e
+          set -o pipefail
+          sudo -E bash uploadROM.sh prepare 2>&1 | tee -a build_action.log
+
+      - name: Upload fastboot ROM artifact
+        id: fastboot_artifact
+        if: steps.prepare_packages.outputs.fastboot_path != ''
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.prepare_packages.outputs.fastboot_path }}
+          archive: false
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Upload OTA ROM artifact
+        id: ota_artifact
+        if: steps.prepare_packages.outputs.ota_path != ''
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.prepare_packages.outputs.ota_path }}
+          archive: false
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Record GitHub artifact links
+        working-directory: toolbuild
+        env:
+          FASTBOOT_ARTIFACT_URL: ${{ steps.fastboot_artifact.outputs.artifact-url }}
+          FASTBOOT_ARTIFACT_DIGEST: ${{ steps.fastboot_artifact.outputs.artifact-digest }}
+          OTA_ARTIFACT_URL: ${{ steps.ota_artifact.outputs.artifact-url }}
+          OTA_ARTIFACT_DIGEST: ${{ steps.ota_artifact.outputs.artifact-digest }}
+        run: |
+          python3 bin/record_artifacts.py || echo "Artifact link validation failed; continuing with Google Drive"
+
       - name: Set up Rclone
         working-directory: toolbuild
         run: |
@@ -146,7 +186,7 @@ jobs:
           set -o pipefail
           python notify.py upload "${{ github.repository }}" "${{ inputs.input_url }}" "xiaomi" "${{ inputs.builder_name }}" "${{ inputs.builder_id }}"
           echo "[STEP] Upload ROM to cloud" | tee -a build_action.log
-          sudo -E bash uploadROM.sh 2>&1 | tee -a build_action.log
+          sudo -E bash uploadROM.sh cloud 2>&1 | tee -a build_action.log
 
       - name: Send success notification
         if: success()
