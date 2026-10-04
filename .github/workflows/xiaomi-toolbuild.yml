@@ -174,3 +174,29 @@ jobs:
           NOTIFY_ERROR_REASON: Workflow run was cancelled before completion.
         run: |
           python notify.py cancelled "${{ github.repository }}" "${{ inputs.input_url }}" "xiaomi" "${{ inputs.builder_name }}" "${{ inputs.builder_id }}"
+
+      # NT Manager app: ntapi marks the build finished, stores the download links and pushes a
+      # notification to the device that requested it. Runs for bot builds too (ntapi ignores those).
+      - name: Report result to NT API
+        if: always()
+        continue-on-error: true
+        env:
+          NTAPI_URL: ${{ secrets.NTAPI_URL }}
+          OTA_BUILD_SECRET: ${{ secrets.OTA_BUILD_SECRET }}
+          INPUT_URL: ${{ inputs.input_url }}
+          JOB_STATUS: ${{ job.status }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          if [ -z "$NTAPI_URL" ] || [ -z "$OTA_BUILD_SECRET" ]; then
+            echo "NTAPI_URL / OTA_BUILD_SECRET not set, result not sent to NT API"
+            exit 0
+          fi
+          link() { head -n 1 "toolbuild/bin/ddevice/$1" 2>/dev/null | tr -d '\r\n' || true; }
+          download="$(link gdrive_link.txt)"
+          [ -n "$download" ] || download="$(link download_link.txt)"
+          jq -n --arg runId "$RUN_ID" --arg status "$JOB_STATUS" --arg romUrl "$INPUT_URL" \
+            --arg downloadUrl "$download" --arg otaUrl "$(link gdrive_ota_link.txt)" \
+            '{runId: ($runId | tonumber), status: $status, romUrl: $romUrl, downloadUrl: $downloadUrl, otaUrl: $otaUrl}' \
+            | curl -sS -m 30 --retry 3 -X POST "${NTAPI_URL%/}/api/toolbox/build" \
+                -H "Authorization: Bearer $OTA_BUILD_SECRET" -H "content-type: application/json" \
+                --data-binary @- || echo "NT API did not accept the build result"
