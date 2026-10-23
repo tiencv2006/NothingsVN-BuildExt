@@ -34,6 +34,19 @@ on:
           - fastboot
           - ota
         default: both
+      ota_lk:
+        description: 'Include the lk (bootloader) partition in the OTA package'
+        required: false
+        type: boolean
+        default: false
+      ota_scope:
+        description: 'OTA package scope: full (all partitions) or update (super partitions only)'
+        required: false
+        type: choice
+        options:
+          - full
+          - update
+        default: full
 
 jobs:
   Build:
@@ -46,6 +59,8 @@ jobs:
       INSTALL_MODS: ${{ inputs.install_mods }}
       INSTALL_TOOLBOX: ${{ inputs.install_toolbox }}
       BUILD_MODE: ${{ inputs.build_mode }}
+      OTA_INCLUDE_LK: ${{ inputs.ota_lk }}
+      OTA_SCOPE: ${{ inputs.ota_scope }}
     steps:
       - name: Clean unused files and applications
         run: |
