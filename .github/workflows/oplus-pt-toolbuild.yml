@@ -102,7 +102,7 @@ jobs:
           sudo apt-get update 2>&1 | tee -a build_action.log
           sudo apt-get install -y python3 python3-pip python-is-python3 2>&1 | tee -a build_action.log
           sudo python3 -m pip install --break-system-packages --ignore-installed --upgrade pip setuptools wheel 2>&1 | tee -a build_action.log
-          sudo python3 -m pip install --break-system-packages requests ConfigObj telebot lz4 google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client 2>&1 | tee -a build_action.log
+          sudo python3 -m pip install --break-system-packages --ignore-installed requests ConfigObj telebot lz4 google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client 2>&1 | tee -a build_action.log
 
       - name: Send start notification
         working-directory: toolbuild
